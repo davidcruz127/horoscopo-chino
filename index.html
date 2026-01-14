@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horóscopo Chino Animado</title>
+    <style>
+        :root {
+            --primary: #ff4757;
+            --bg-body: #dfe6e9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-body);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden; /* Evitar scroll por el confeti */
+        }
+
+        /* Contenedor principal con efecto Glassmorphism */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2.5rem;
+            border-radius: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            transition: transform 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 2px solid white;
+        }
+
+        h1 {
+            color: #2d3436;
+            margin-bottom: 0.5rem;
+            font-weight: 800;
+        }
+
+        input[type="date"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #dfe6e9;
+            border-radius: 12px;
+            font-size: 1rem;
+            margin-top: 10px;
+            outline: none;
+            transition: 0.3s;
+            box-sizing: border-box;
+            background: #f8f9fa;
+        }
+
+        input[type="date"]:focus {
+            border-color: var(--primary);
+            background: white;
+        }
+
+        button {
+            background: linear-gradient(45deg, #ff4757, #ff6b81);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            font-weight: bold;
+            box-shadow: 0 10px 20px rgba(255, 71, 87, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* --- ZONA DE RESULTADOS ANIMADA --- */
+        #resultado {
+            display: none;
+            margin-top: 30px;
+            perspective: 1000px;
+        }
+
+        /* El círculo detrás del animal */
+        .animal-container {
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle at 30% 30%, #fff, #f0f0f0);
+            border-radius: 50%;
+            margin: 0 auto 15px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 
+                0 10px 20px rgba(0,0,0,0.1),
+                inset 0 0 20px rgba(255,255,255,0.8);
+            position: relative;
+            
+            /* Animación de entrada: POP */
+            animation: popIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+
+        .animal-emoji {
+            font-size: 5rem;
+            z-index: 2;
+            display: block;
+            
+            /* Animación continua: FLOTAR Y LATIR */
+            animation: floatAndBeat 3s ease-in-out infinite;
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.2));
+            transform-origin: bottom center;
+        }
+
+        .texto-resultado h2 {
+            margin: 0;
+            font-size: 2rem;
+            color: var(--primary);
+            animation: slideUp 0.5s ease 0.2s backwards;
+        }
+
+        .badge-elemento {
+            display: inline-block;
+            background: #2d3436;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin: 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            animation: slideUp 0.5s ease 0.3s backwards;
+        }
+
+        .desc {
+            color: #636e72;
+            line-height: 1.5;
+            animation: slideUp 0.5s ease 0.4s backwards;
+        }
+
+        /* --- DEFINICIÓN DE ANIMACIONES --- */
+        
+        @keyframes popIn {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        @keyframes floatAndBeat {
+            0% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.1); } /* Sube y crece */
+            100% { transform: translateY(0) scale(1); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- CONFETI (PARTÍCULAS) --- */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            animation: fall linear forwards;
+            top: -10px;
+            z-index: 100;
+            border-radius: 2px;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(105vh) rotate(720deg); }
+        }
+
+        .aviso {
+            font-size: 0.75rem;
+            color: #b2bec3;
+            margin-top: 15px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="card" id="tarjeta">
+        <h1>Horóscopo Chino ✨</h1>
+        <p style="color: #636e72;">Descubre tu animal espiritual</p>
+        
+        <input type="date" id="fechaNacimiento">
+        <button onclick="calcular()">¡Revelar Animal!</button>
+
+        <div id="resultado">
+            <div class="animal-container" id="bgAnimal">
+                <span class="animal-emoji" id="emoji">🐲</span>
+            </div>
+            
+            <div class="texto-resultado">
+                <h2 id="nombre">Dragón</h2>
+                <span class="badge-elemento" id="elemento">Fuego</span>
+                <p class="desc" id="descripcion">Descripción...</p>
+            </div>
+            
+            <p class="aviso" id="avisoMes" style="display:none;">⚠️ Verifica si naciste antes del Año Nuevo Chino (Ene/Feb).</p>
+        </div>
+    </div>
+
+    <script>
+        function calcular() {
+            const input = document.getElementById('fechaNacimiento').value;
+            if(!input) return alert("Por favor selecciona una fecha");
+
+            const fecha = new Date(input);
+            const anio = fecha.getFullYear();
+            
+            // Datos
+            const animales = [
+                {n:"Rata", e:"🐀", d:"Astuta y encantadora"}, {n:"Buey", e:"🐂", d:"Fuerte y constante"},
+                {n:"Tigre", e:"🐅", d:"Valiente y líder"}, {n:"Conejo", e:"🐇", d:"Amable y elegante"},
+                {n:"Dragón", e:"🐉", d:"Poderoso y noble"}, {n:"Serpiente", e:"🐍", d:"Sabia y misteriosa"},
+                {n:"Caballo", e:"🐎", d:"Libre y alegre"}, {n:"Cabra", e:"🐐", d:"Creativa y pacífica"},
+                {n:"Mono", e:"🐒", d:"Divertido e ingenioso"}, {n:"Gallo", e:"🐓", d:"Orgulloso y trabajador"},
+                {n:"Perro", e:"🐕", d:"Leal y honesto"}, {n:"Cerdo", e:"🐖", d:"Generoso y feliz"}
+            ];
+
+            // Cálculo
+            let indice = (anio - 4) % 12;
+            if(indice < 0) indice += 12;
+            const animal = animales[indice];
+
+            // Elemento
+            const ultimo = parseInt(anio.toString().slice(-1));
+            let elemData = { t:"Metal", c:"#b2bec3" }; // default
+            if(ultimo <= 1) elemData = {t:"Metal", c:"#95a5a6"};
+            else if(ultimo <= 3) elemData = {t:"Agua", c:"#3498db"};
+            else if(ultimo <= 5) elemData = {t:"Madera", c:"#2ecc71"};
+            else if(ultimo <= 7) elemData = {t:"Fuego", c:"#e74c3c"};
+            else elemData = {t:"Tierra", c:"#e67e22"};
+
+            // Actualizar DOM
+            const resDiv = document.getElementById('resultado');
+            // Ocultar primero para reiniciar animación
+            resDiv.style.display = 'none';
+            
+            setTimeout(() => {
+                resDiv.style.display = 'block';
+                
+                // Textos
+                document.getElementById('emoji').innerText = animal.e;
+                document.getElementById('nombre').innerText = animal.n;
+                document.getElementById('descripcion').innerText = animal.d;
+                document.getElementById('elemento').innerText = elemData.t;
+                
+                // Colores Dinámicos
+                document.getElementById('elemento').style.background = elemData.c;
+                document.getElementById('nombre').style.color = elemData.c;
+                
+                // Color de fondo del círculo del animal (suave)
+                document.getElementById('bgAnimal').style.background = `radial-gradient(circle, #fff, ${elemData.c}33)`; // 33 es transparencia hex
+                
+                // Aviso Enero/Febrero
+                const mes = fecha.getMonth();
+                document.getElementById('avisoMes').style.display = (mes <= 1) ? 'block' : 'none';
+
+                // EFECTO DE CONFETI
+                lanzarConfeti(elemData.c);
+            }, 50);
+        }
+
+        // Función para generar confeti sin librerías externas
+        function lanzarConfeti(colorTema) {
+            const colores = [colorTema, '#f1c40f', '#ecf0f1'];
+            
+            for(let i = 0; i < 50; i++) {
+                const confeti = document.createElement('div');
+                confeti.classList.add('confetti');
+                
+                // Posición aleatoria horizontal
+                confeti.style.left = Math.random() * 100 + 'vw';
+                
+                // Color aleatorio
+                confeti.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
+                
+                // Velocidad de caída aleatoria (entre 2s y 5s)
+                confeti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                
+                // Tamaño aleatorio
+                const size = Math.random() * 10 + 5 + 'px';
+                confeti.style.width = size;
+                confeti.style.height = size;
+                
+                document.body.appendChild(confeti);
+                
+                // Limpiar del DOM cuando termine la animación
+                setTimeout(() => {
+                    confeti.remove();
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
